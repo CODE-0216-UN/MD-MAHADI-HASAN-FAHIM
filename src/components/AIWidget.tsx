@@ -196,6 +196,8 @@ export default function AIWidget({ theme = "dark" }: AIWidgetProps) {
         content: m.content,
       }));
 
+      console.log("[AIWidget] Sending chat request to /api/chat with message history size:", messageHistory.length);
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -205,10 +207,22 @@ export default function AIWidget({ theme = "dark" }: AIWidgetProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate response");
+        let errorDetails = "Unknown server error";
+        try {
+          const errData = await response.json();
+          errorDetails = errData.details || errData.error || response.statusText;
+        } catch (_) {
+          errorDetails = response.statusText;
+        }
+        throw new Error(`HTTP ${response.status} - ${errorDetails}`);
       }
 
       const data = await response.json();
+      
+      if (!data || typeof data.reply !== "string") {
+        throw new Error("Invalid response format received from server. Expected { reply: string }.");
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -217,12 +231,18 @@ export default function AIWidget({ theme = "dark" }: AIWidgetProps) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error("Chat error:", error);
+    } catch (error: any) {
+      console.error("[AIWidget] Hana AI Assistant Error:", error);
+      console.warn(
+        "[AIWidget] Troubleshooting tips:\n" +
+        "1. Ensure GEMINI_API_KEY is added to Vercel Environment Variables.\n" +
+        "2. Check if the Vercel serverless function /api/chat is compiling successfully."
+      );
+
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Oops! I encountered an issue connecting to my brain. Please try again or feel free to check out Fahim's contact section directly!",
+        content: `Oops! I encountered an issue connecting to my brain. (${error?.message || "Connection failed"}). Please make sure GEMINI_API_KEY is set in your Vercel environment variables or try again later!`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
