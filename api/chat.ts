@@ -91,12 +91,12 @@ export default async function handler(req: Request, res: Response) {
     return res.status(405).json({ error: "Method not allowed. Use POST instead." });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY1;
+  const apiKey = process.env.HANA_GEMINI_KEY;
   if (!apiKey) {
-    console.error("[Vercel Serverless Error] GEMINI_API_KEY1 environment variable is missing!");
+    console.error("[Vercel Serverless Error] HANA_GEMINI_KEY environment variable is missing!");
     return res.status(500).json({
-      error: "GEMINI_API_KEY1 is missing.",
-      details: "The GEMINI_API_KEY1 environment variable was not found in Vercel's Environment Variables settings. Please make sure you set 'GEMINI_API_KEY1' in your Vercel Dashboard.",
+      error: "HANA_GEMINI_KEY is missing.",
+      details: "The HANA_GEMINI_KEY environment variable was not found in Vercel's Environment Variables settings. Please make sure you set 'HANA_GEMINI_KEY' in your Vercel Dashboard.",
     });
   }
 
@@ -122,7 +122,7 @@ export default async function handler(req: Request, res: Response) {
       }
     }
 
-    console.log(`[Vercel Serverless] Initializing GoogleGenerativeAI client with GEMINI_API_KEY1...`);
+    console.log(`[Vercel Serverless] Initializing GoogleGenerativeAI client with HANA_GEMINI_KEY...`);
     const genAI = new GoogleGenerativeAI(apiKey);
     
     // Using gemini-1.5-flash as specified by user
