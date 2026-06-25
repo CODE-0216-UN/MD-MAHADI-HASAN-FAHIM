@@ -153,7 +153,7 @@ export default function Navbar({ onContactClick, theme, toggleTheme }: NavbarPro
             ))}
           </div>
 
-          {/* Desktop Right Actions (Theme Toggle + Email Copy + Contact Button) */}
+          {/* Desktop Right Actions (Theme Toggle + Contact Button) */}
           <div className="hidden lg:flex items-center gap-3">
             {/* Theme Toggle Button */}
             <button
@@ -166,28 +166,6 @@ export default function Navbar({ onContactClick, theme, toggleTheme }: NavbarPro
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            {/* Email copying action */}
-            <button
-              onClick={copyEmailToClipboard}
-              className={`text-xs font-mono px-3 py-1.5 rounded-full transition-all duration-300 flex items-center gap-1.5 border cursor-pointer ${
-                isDark 
-                  ? "text-zinc-400 hover:text-accent bg-zinc-900/60 border-zinc-800 hover:border-accent/40" 
-                  : "text-zinc-600 hover:text-accent bg-zinc-50 border-zinc-200 hover:border-accent/40"
-              }`}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-accent" />
-                  Copied Email
-                </>
-              ) : (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 animate-pulse"></span>
-                  immahadihasanfahim@gmail.com
-                </>
-              )}
             </button>
 
             <button
