@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useAnimation } from "motion/react";
-import { MessageSquare, X, Send, Sparkles, User, Loader2, Phone } from "lucide-react";
+import { 
+  MessageSquare, 
+  X, 
+  Send, 
+  Sparkles, 
+  User, 
+  Loader2, 
+  Phone,
+  FileText, 
+  Github, 
+  Linkedin, 
+  Facebook, 
+  Instagram, 
+  Mail, 
+  ExternalLink, 
+  MessageCircle 
+} from "lucide-react";
 
 interface Message {
   id: string;
@@ -11,6 +27,130 @@ interface Message {
 
 interface AIWidgetProps {
   theme?: "dark" | "light";
+}
+
+// Map link types to appropriate Lucide icons
+function LinkIcon({ type, className = "w-3.5 h-3.5" }: { type: string; className?: string }) {
+  switch (type) {
+    case "drive":
+      return <FileText className={className} />;
+    case "github":
+      return <Github className={className} />;
+    case "linkedin":
+      return <Linkedin className={className} />;
+    case "facebook":
+      return <Facebook className={className} />;
+    case "instagram":
+      return <Instagram className={className} />;
+    case "whatsapp":
+      return <MessageCircle className={className} />;
+    case "email":
+      return <Mail className={className} />;
+    default:
+      return <ExternalLink className={className} />;
+  }
+}
+
+// Parsed message block with text and isolated actionable button links
+function FormattedMessage({ content, isDark }: { content: string; isDark: boolean }) {
+  const links: { label: string; url: string; type: string }[] = [];
+  const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g;
+  
+  let match;
+  // 1. Extract markdown links
+  while ((match = mdLinkRegex.exec(content)) !== null) {
+    const label = match[1];
+    const url = match[2];
+    let type = "generic";
+    
+    if (
+      url.includes("drive.google.com") || 
+      label.toLowerCase().includes("cv") || 
+      label.toLowerCase().includes("resume") || 
+      label.toLowerCase().includes("biodata")
+    ) {
+      type = "drive";
+    } else if (url.includes("github.com")) {
+      type = "github";
+    } else if (url.includes("linkedin.com")) {
+      type = "linkedin";
+    } else if (url.includes("facebook.com")) {
+      type = "facebook";
+    } else if (url.includes("instagram.com")) {
+      type = "instagram";
+    } else if (url.includes("wa.me") || url.includes("whatsapp.com")) {
+      type = "whatsapp";
+    } else if (url.startsWith("mailto:") || url.includes("@")) {
+      type = "email";
+    }
+    
+    links.push({ label, url, type });
+  }
+
+  // 2. Extract raw URLs not captured inside markdown links
+  const rawUrlRegex = /(https?:\/\/[^\s\)\],]+)/g;
+  let rawMatch;
+  while ((rawMatch = rawUrlRegex.exec(content)) !== null) {
+    const url = rawMatch[1];
+    const alreadyCaptured = links.some((l) => l.url === url);
+    const isMarkdownUrl = content.substring(rawMatch.index - 2, rawMatch.index) === "](";
+    
+    if (!alreadyCaptured && !isMarkdownUrl) {
+      let label = "Visit Link";
+      let type = "generic";
+      
+      if (url.includes("drive.google.com")) {
+        label = "Google Drive CV";
+        type = "drive";
+      } else if (url.includes("github.com")) {
+        label = "GitHub Profile";
+        type = "github";
+      } else if (url.includes("linkedin.com")) {
+        label = "LinkedIn Profile";
+        type = "linkedin";
+      } else if (url.includes("facebook.com")) {
+        label = "Facebook Profile";
+        type = "facebook";
+      } else if (url.includes("instagram.com")) {
+        label = "Instagram Profile";
+        type = "instagram";
+      } else if (url.includes("wa.me") || url.includes("whatsapp.com")) {
+        label = "WhatsApp Chat";
+        type = "whatsapp";
+      }
+      
+      links.push({ label, url, type });
+    }
+  }
+
+  // Clean raw markdown syntax for display: replaces "[label](url)" with "label"
+  const cleanText = content.replace(mdLinkRegex, (_, label) => label);
+
+  return (
+    <div className="space-y-2.5">
+      <p className="whitespace-pre-wrap">{cleanText}</p>
+      {links.length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          {links.map((link, idx) => (
+            <a
+              key={idx}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono tracking-wide border transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] cursor-pointer ${
+                isDark
+                  ? "bg-zinc-950/80 border-[#7ED321]/30 hover:border-[#7ED321]/80 text-[#7ED321] hover:bg-[#7ED321]/10"
+                  : "bg-white border-[#7ED321]/45 hover:border-[#7ED321] text-[#7ED321] hover:bg-[#7ED321]/5 shadow-2xs"
+              }`}
+            >
+              <LinkIcon type={link.type} />
+              <span>{link.label}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Cute minimal robot face component with idle animations
@@ -516,7 +656,11 @@ export default function AIWidget({ theme = "dark" }: AIWidgetProps) {
                             : "bg-gradient-to-tr from-[#7ED321]/90 to-[#7ED321] text-zinc-950 font-medium rounded-tr-sm"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap">{m.content}</p>
+                        {isAssistant ? (
+                          <FormattedMessage content={m.content} isDark={isDark} />
+                        ) : (
+                          <p className="whitespace-pre-wrap">{m.content}</p>
+                        )}
                         <span
                           className={`block text-[9px] mt-1.5 text-right transition-colors duration-300 ${
                             isAssistant 
