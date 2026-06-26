@@ -125,24 +125,41 @@ export default async function handler(req: Request, res: Response) {
     console.log(`[Vercel Serverless] Initializing GoogleGenerativeAI client with HANA_GEMINI_KEY...`);
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Using gemini-1.5-flash as specified by user
-    const modelName = "gemini-1.5-flash";
-    console.log(`[Vercel Serverless] Calling model ${modelName} with message history length ${combinedContents.length}...`);
-    
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: FAHIM_SYSTEM_INSTRUCTION,
-    });
+    // Fallback list of models to try
+    const modelNames = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"];
+    let responseText = "";
+    let success = false;
+    let lastError: any = null;
 
-    const result = await model.generateContent({
-      contents: combinedContents,
-      generationConfig: {
-        temperature: 0.7,
-      },
-    });
+    for (const modelName of modelNames) {
+      try {
+        console.log(`[Vercel Serverless] Trying model ${modelName} with message history length ${combinedContents.length}...`);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: FAHIM_SYSTEM_INSTRUCTION,
+        });
 
-    const responseText = result.response.text();
-    console.log(`[Vercel Serverless] Gemini response received successfully.`);
+        const result = await model.generateContent({
+          contents: combinedContents,
+          generationConfig: {
+            temperature: 0.7,
+          },
+        });
+
+        responseText = result.response.text();
+        console.log(`[Vercel Serverless] Gemini response received successfully using model ${modelName}.`);
+        success = true;
+        break;
+      } catch (err: any) {
+        console.warn(`[Vercel Serverless Warning] Failed to generate content using ${modelName}:`, err?.message || err);
+        lastError = err;
+      }
+    }
+
+    if (!success) {
+      throw lastError || new Error("All tried Gemini models failed to generate content.");
+    }
+
     return res.json({ reply: responseText });
 
   } catch (error: any) {
